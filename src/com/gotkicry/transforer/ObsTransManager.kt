@@ -16,6 +16,8 @@ class ObsTransManager {
             return obsTransClassMap[className]
         }
 
+        var packageName = ""
+
 
     }
 }

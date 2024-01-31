@@ -1,8 +1,9 @@
 import com.gotkicry.transforer.ObsTransManager
 import com.gotkicry.transforer.SmaliTransUtil
+import com.gotkicry.transforer.bean.ObsTransClass
 import java.io.File
 
-fun main() {
+fun main(array: Array<String>) {
     ObsTransManager.initMapping("./test/mapping.txt")
 //    parseMapping.forEach {
 //        it.printClassInfo()
@@ -11,9 +12,14 @@ fun main() {
 //        println("fileName : ${it.name}")
 //    }
 //
-    val path = File("./test/smali")
-    getDeepFileList(path).forEach {
-        transSmaliFile(it)
+    ObsTransManager.packageName = "com.test.demo"
+    val dirs = listOf(
+        File("./test/plugin"),
+    )
+    for (dir in dirs){
+        getDeepFileList(dir).forEach {
+            transSmaliFile(it)
+        }
     }
 
 
@@ -31,27 +37,27 @@ fun getDeepFileList(path: File): List<File> {
 fun transSmaliFile(file: File){
     val outputDir = File("./test/output/smali/")
     var content = file.reader().readText()
-    run {
-        val classInfo = content.lines()[0]
-        val smaliFilePath = "L.*?;".toRegex().find(classInfo)!!.value.substring(1).dropLast(1)
-        val obsClass = ObsTransManager.getObsTransClass(smaliFilePath.replace("/",".")) ?: return
-        obsClass.fieldsList.forEach{
-            content = content.replace(" ${it.fieldName}:", " ${it.transName}:")
-        }
-    }
 
+    val classInfo = content.lines()[0]
+    val smaliFilePath = "L.*?;".toRegex().find(classInfo)!!.value.substring(1).dropLast(1)
+    val obsClass = ObsTransManager.getObsTransClass(smaliFilePath.replace("/",".")) ?: run{
+        var packageName = smaliFilePath.replace("/", ".")
+        packageName = packageName.dropLast(packageName.count() - packageName.indexOfFirst { it == '$' })
+        ObsTransManager.getObsTransClass(packageName)
+    }
     var writeFile :File? = null
     content.lines().forEach { line->
-        var transLine = SmaliTransUtil.transSmali(line)
+        var transLine = SmaliTransUtil.transSmali(line,obsClass)
         if (transLine.startsWith(".class")){
             val classInfo = transLine
             val smaliFilePath = "L.*?;".toRegex().find(classInfo)!!.value.substring(1).dropLast(1)
-            val smaliFile = File(outputDir, "$smaliFilePath.smail")
+            val smaliFile = File(outputDir, "$smaliFilePath.smali")
             smaliFile.parentFile.mkdirs()
             smaliFile.createNewFile()
+            println("${file.absolutePath} : ${smaliFile.absolutePath}")
             writeFile = smaliFile
         }else if (transLine.startsWith(".source")){
-            transLine = ".source \"${writeFile!!.name.replace(".smail",".java")}\""
+            transLine = ".source \"${writeFile!!.name.replace(".smali",".java")}\""
         }
         writeFile!!.appendText(transLine)
         writeFile!!.appendText("\n")
