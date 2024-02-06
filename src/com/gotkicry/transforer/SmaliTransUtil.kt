@@ -21,7 +21,7 @@ object SmaliTransUtil {
                 smaliFileLine
             }
         }
-        "L.*?;".toRegex().findAll(smaliFileLine).forEach {
+        "L[^;:]*;".toRegex().findAll(smaliFileLine).forEach {
             val transR :String = transRes(smaliFileLine)
             if (transR.isNotEmpty()){
                 return transR
