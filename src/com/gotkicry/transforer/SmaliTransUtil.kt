@@ -1,7 +1,6 @@
 package com.gotkicry.transforer
 
 import com.gotkicry.transforer.bean.ObsTransClass
-import com.gotkicry.util.LogUtil
 
 object SmaliTransUtil {
     const val TAG = "SmaliTransUtil"
@@ -22,10 +21,10 @@ object SmaliTransUtil {
             }
         }
         "L[^;:]*;".toRegex().findAll(smaliFileLine).forEach {
-            val transR :String = transRes(smaliFileLine)
-            if (transR.isNotEmpty()){
-                return transR
-            }
+//            val transR :String = transRes(smaliFileLine)
+//            if (transR.isNotEmpty()){
+//                return transR
+//            }
 
             var replace = it.value
             if (replace.indexOf("(") != -1){
@@ -38,7 +37,7 @@ object SmaliTransUtil {
             val className = replace.replaceFirst("L", "").replace(";", "").replace("/", ".")
 
             var childClassName : String? = null
-            val obsTransClass = ObsTransManager.getObsTransClass(className) ?: run {
+            val obsTransClazz = ObsTransManager.getObsTransClass(className) ?: run {
                 childClassName = if (className.indexOfFirst { it == '$' } != -1) {
                     className.substring(className.indexOfFirst { it == '$' })
                 } else {
@@ -46,14 +45,16 @@ object SmaliTransUtil {
                 }
                 ObsTransManager.getObsTransClass(className.dropLast(className.count() - className.indexOfFirst { it == '$' }))
             }
-            if (obsTransClass != null) {
-                transLine = transLine.replaceFirst(replace, "L${obsTransClass.transName.replace(".", "/")}${childClassName ?: ""};")
+            if (obsTransClazz != null) {
+                transLine = transLine.replaceFirst(replace, "L${obsTransClazz.transName.replace(".", "/")}${childClassName ?: ""};")
             }
 
         }
         return transLine
     }
 
+
+    @Deprecated("无效的Api")
     fun transRes(smaliFileLine: String):String{
         if (smaliFileLine.indexOfFirst { it == 'L' } == -1){
             return ""
@@ -110,7 +111,8 @@ object SmaliTransUtil {
                 fieldSplit.dropLast(1).joinToString(" ") + " ${it.transName}:${transJavaReturnType2Smali(it.fieldType)}"
             }
         }catch (e : Exception){
-            LogUtil.LOGD(TAG, "transField error : $fieldString")
+//            LogUtil.printAndLine("transField error : $fieldString ")
+//            e.printStackTrace()
         }
 
         return  fieldString
@@ -143,15 +145,15 @@ object SmaliTransUtil {
 //        println("get method -> $methodString")
         val startStr = methodString.dropLast(methodString.count() - methodString.indexOfFirst { it == 'L' })
         val substring = methodString.substring(methodString.indexOfFirst { it == 'L' })
-        LogUtil.LOGD(TAG,substring)
+//        LogUtil.printAndLine(substring)
 
         val methodInfo = substring.split("->")
         val className = methodInfo[0].replaceFirst("L","").dropLast(1).replace("/",".")
-        LogUtil.LOGD(TAG,"className : $className")
+//        LogUtil.printAndLine("className : $className")
         val obsClass = ObsTransManager.getObsTransClass(className)
 
         val methodName = methodInfo[1].split("(")[0]
-        LogUtil.LOGD(TAG,"methodName : $methodName")
+//        LogUtil.printAndLine("methodName : $methodName")
         //如果只有一个方法，可以直接替换
         val methodList = obsClass?.let{ obsClazz ->
             obsClazz.methodList.filter { it.methodName == methodName }
@@ -175,8 +177,8 @@ object SmaliTransUtil {
             returnValue = transReturnValue(content.substring(indexCount + 1))
             transMethodAttr(content.dropLast(content.count() - indexCount))
         }
-        LogUtil.LOGD(TAG,"methodAttr : $methodAttr")
-        LogUtil.LOGD(TAG,"returnValue : $returnValue")
+//        LogUtil.printAndLine("methodAttr : $methodAttr")
+//        LogUtil.printAndLine("returnValue : $returnValue")
 
         val matchList = methodList.filter { it.methodAttr.joinToString(",") == methodAttr&& it.methodType == returnValue }
         return if (matchList.isNotEmpty()){

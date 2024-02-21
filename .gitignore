@@ -1,6 +1,7 @@
 ### IntelliJ IDEA ###
 out/
 test/
+workTmp/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
